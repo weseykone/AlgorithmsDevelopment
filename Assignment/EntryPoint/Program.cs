@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace EntryPoint
 {
@@ -60,19 +61,48 @@ namespace EntryPoint
             //return specialBuildings.OrderBy(v => Vector2.Distance(v, house));
     }
 
-    private static IEnumerable<IEnumerable<Vector2>> FindSpecialBuildingsWithinDistanceFromHouse(
-      IEnumerable<Vector2> specialBuildings, 
-      IEnumerable<Tuple<Vector2, float>> housesAndDistances)
-    {
-      return
-          from h in housesAndDistances
-          select
-            from s in specialBuildings
-            where Vector2.Distance(h.Item1, s) <= h.Item2
-            select s;
-    }
 
-    private static IEnumerable<Tuple<Vector2, Vector2>> FindRoute(Vector2 startingBuilding, 
+
+      private static IEnumerable<IEnumerable<Vector2>> FindSpecialBuildingsWithinDistanceFromHouse(
+          IEnumerable<Vector2> specialBuildings,
+          IEnumerable<Tuple<Vector2, float>> housesAndDistances)
+      {
+          List<List<Vector2>> specialBuildingsInRange = new List<List<Vector2>>();
+          List<Vector2> specialBuildingsInBox = new List<Vector2>();
+          List<Tuple<Vector2, float>> buildingList = housesAndDistances.ToList();
+
+          var a = new KDTree();
+          var b = a.MakeTree(specialBuildings.ToList(), 0);
+
+          foreach (var building in buildingList)
+          {
+              a.RangeSearch(building.Item1, b, building.Item2, 0);
+
+              foreach (var x in a.PotentialBuildingsInRange)
+              {
+                  if (Vector2.Distance(building.Item1, x) <= building.Item2)
+                  {
+                      specialBuildingsInBox.Add(x);
+                  }
+              }
+          }
+
+          specialBuildingsInRange.Add(specialBuildingsInBox);
+
+          return specialBuildingsInRange;
+
+          /* 
+            return from h in housesAndDistances 
+                    select
+                        from s in specialBuildings
+                        where Vector2.Distance(h.Item1, s) <= h.Item2
+                        select s;
+          */
+      }
+
+
+
+      private static IEnumerable<Tuple<Vector2, Vector2>> FindRoute(Vector2 startingBuilding, 
       Vector2 destinationBuilding, IEnumerable<Tuple<Vector2, Vector2>> roads)
     {
       var startingRoad = roads.Where(x => x.Item1.Equals(startingBuilding)).First();

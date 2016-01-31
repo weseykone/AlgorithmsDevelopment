@@ -138,39 +138,24 @@ namespace EntryPoint
         private static IEnumerable<IEnumerable<Tuple<Vector2, Vector2>>> FindRoutesToAll(Vector2 startingBuilding,
             IEnumerable<Vector2> destinationBuildings, IEnumerable<Tuple<Vector2, Vector2>> roads)
         {
-            Warshall w = new Warshall();
-            Dictionary<Vector2, int> adjList2 = new Dictionary<Vector2, int>();
-            var allRoads = roads.ToList();
-            var roadsTuplesList = new List<Tuple<Vector2, Vector2>>();
-            List<List<Tuple<Vector2, Vector2>>> allRoadsToBuildings = new List<List<Tuple<Vector2, Vector2>>>();
+            var graph = new Graph(roads);
+            List<IEnumerable<Tuple<Vector2, Vector2>>> result = new List<IEnumerable<Tuple<Vector2, Vector2>>>();
 
-            var j = 0;
-            foreach (var t in roads.Where(t => !adjList2.ContainsKey(t.Item1)))
+            foreach (var building in destinationBuildings)
             {
-                adjList2.Add(t.Item1, j);
-                j++;
-            }
+                var tempList = new List<Tuple<Vector2, Vector2>>();
+                var Graph = graph.GetPath(startingBuilding, building);
 
-            var matrix = w.CreateAdjMatrix(adjList2, allRoads);
-            var next = w.FloydWarshall(matrix, adjList2);
-
-            var startPoint = adjList2.FirstOrDefault(x => x.Key == startingBuilding).Value;
-
-            foreach (var destination in destinationBuildings)
-            {
-                var endPoint = adjList2.FirstOrDefault(x => x.Key == destination).Value;
-                var roadToBuilding = w.PrintPath(next, adjList2, startPoint, endPoint);
-
-                for (int i = 0; i < roadToBuilding.Count; i++)
+                for (var i = 0; i < Graph.Count; i++)
                 {
-                    if(i + 1 < roadToBuilding.Count)
-                        roadsTuplesList.Add(Tuple.Create(roadToBuilding[i], roadToBuilding[i+1]));
+                    if (i + 1 < Graph.Count)
+                    {
+                        tempList.Add(Tuple.Create(Graph[i], Graph[i + 1]));
+                    }
                 }
-
-                allRoadsToBuildings.Add(roadsTuplesList);
+                result.Add(tempList);
             }
-
-            return allRoadsToBuildings;
+            return result;
         }
     }
 #endif
